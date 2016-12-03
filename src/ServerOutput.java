@@ -78,7 +78,7 @@ public class ServerOutput implements Runnable
 		}
 		catch(Exception ex)
 		{
-			System.out.println("Could not send Envelope to Client. ");
+			//System.out.println("Could not send Envelope to Client. ");
 		}
 	}
 	

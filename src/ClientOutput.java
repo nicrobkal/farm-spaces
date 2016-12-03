@@ -63,7 +63,7 @@ public class ClientOutput implements Runnable
 		}
 		catch(Exception ex)
 		{
-			System.out.println("Server ended. ");
+			System.out.println("Server stopped. Please restart client. ");
 		}
 	}
 	

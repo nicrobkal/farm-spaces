@@ -105,7 +105,6 @@ public class Server
 	                line.append(e.getKeyChar());
 	            } else if (c == KeyEvent.VK_ESCAPE) {
 	                saveProgress();
-	                printMessageToAll("Server stopped. Please restart client. ");
 	                System.exit(0);
 	            }
 	        }
@@ -148,7 +147,6 @@ public class Server
 		ServerOutput serverOutput = new ServerOutput(socket, this);
 		addClient(serverOutput);
 		//serverOutput.sendEnvelope(new Envelope(spaceStats, "SpaceStats"));
-		printMessageToAll("Allo? ");
 		updateStats(spaceStats);
 	}
 	
