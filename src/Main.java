@@ -1,4 +1,8 @@
 import javax.swing.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -29,17 +33,30 @@ public class Main {
 		    
 		    // 3. create the gui
 		    JFrame frame = new JFrame("\"Spaces\" Client Console");
-		    //JScrollPane jPane = new JScrollPane();
-		    //frame.add(jPane);
-		    frame.add(console(outPipe, inWriter));
-		    //frame.add(new JScrollBar(5));
-		    frame.setSize(600, 400);
-		    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		    
+		    frame.getContentPane().setLayout(new BorderLayout());
+		    frame.setPreferredSize(new Dimension(800, 600));
+		    
+		    JPanel inputPanel = new JPanel(new BorderLayout());
+		    
+	        inputPanel.setPreferredSize(new Dimension(800, 50));
+	        
+	        inputPanel.add(new JScrollPane(inputConsole(inWriter)));
+	        
+	        JPanel outputPanel = new JPanel(new BorderLayout());
+	        
+	        outputPanel.add(new JScrollPane(outputConsole(outPipe)));
+	        
+	        frame.getContentPane().add(inputPanel, BorderLayout.SOUTH);
+	        frame.getContentPane().add(outputPanel, BorderLayout.CENTER);
+	        
+	        frame.pack();
+		    frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		    frame.setVisible(true);
 	    }
 	    catch(Exception ex)
 	    {
-	    	ex.printStackTrace();
+	    	//ex.printStackTrace();
 	    }
 	    
         Scanner sc = new Scanner(System.in);
@@ -71,21 +88,11 @@ public class Main {
         
     }
 	
-	public static JTextArea console(final InputStream out, final PrintWriter in) {
-	    final JTextArea area = new JTextArea();
+	public static JTextArea inputConsole(final PrintWriter in) {
+		final JTextArea area = new JTextArea();
 
-	    // handle "System.out"
-	    new SwingWorker<Void, String>() {
-	        @Override protected Void doInBackground() throws Exception {
-	            Scanner s = new Scanner(out);
-	            while (s.hasNextLine()) publish(s.nextLine() + "\n");
-	            return null;
-	        }
-	        @Override protected void process(List<String> chunks) {
-	            for (String line : chunks) area.append(line);
-	        }
-	    }.execute();
-
+		area.setFont(new Font("Times New Roman", Font.PLAIN, 28));
+		
 	    // handle "System.in"
 	    area.addKeyListener(new KeyAdapter() {
 	        private StringBuffer line = new StringBuffer();
@@ -94,23 +101,96 @@ public class Main {
 	            if (c == KeyEvent.VK_ENTER) {
 	                in.println(line);
 	                line.setLength(0); 
-	            } else if (c == KeyEvent.VK_BACK_SPACE) { 
-	                line.setLength(line.length() - 1); 
+	                area.setText("");
+	            } else if (c == KeyEvent.VK_BACK_SPACE) {
+	            	if(line.length() > 0)
+	            	{
+	            		line.setLength(line.length() - 1); 
+	            	}
+	            	else
+	            	{
+	            		line.append(' ');
+	            	}
 	            } else if (c == KeyEvent.VK_ESCAPE) {
 	            	//client.printMessage("HEY WE 1! ");
 	            	//client.getSpaceStats().removeClient(client); //PROBABLY THE ISSUE
 	            	//client.printMessage("HEY WE! ");
 	            	//client.getClientOutput().sendEnvelope(new Envelope(client.getSpaceStats(), "SpaceStats"));
-	            	client.getClientOutput().sendEnvelope(new Envelope(client.getClientPlayer().toString() + " disconnected! ", "String"));
-	            	//client.getClientOutput().sendEnvelope(new Envelope(client.getClientPlayer().toString() + " disconnected! ", "String"));
-	            	client.getClientOutput().sendEnvelope(new Envelope(client.getSpaceStats(), "SpaceStats"));
-	                System.exit(0);
+	            	try
+	            	{
+	            		client.getClientOutput().sendEnvelope(new Envelope(client.getClientPlayer().toString() + " disconnected! ", "String"));
+	            		
+	            		client.getSpaceStats().getPlayer(client.getClientPlayer().toString()).setClient(null);
+	            		
+		            	client.getClientOutput().sendEnvelope(new Envelope(client.getSpaceStats(), "SpaceStats"));
+	            	}
+	            	catch(Exception ex)
+	            	{
+	            		//client.getClientOutput().sendEnvelope(new Envelope("Failed to send updated Space Stats to Server after " + client.getClientPlayer().toString() + " disconnected! ", "String"));
+	            	}
+	            	
+	            	System.exit(0);
+	            	
 	            } else if (!Character.isISOControl(c)) {
 	                line.append(e.getKeyChar());
 	            }
 	        }
 	    });
 
+	    return area;
+	}
+	
+	public static JTextArea outputConsole(final InputStream out) {
+		final JTextArea area = new JTextArea();
+	    
+		area.setFont(new Font("Times New Roman", Font.PLAIN, 24));
+		
+		area.setBackground(new Color(200, 220, 255));
+		
+	    // handle "System.out"
+	    new SwingWorker<Void, String>() {
+	        @Override protected Void doInBackground() throws Exception {
+	            Scanner s = new Scanner(out);
+	            while (s.hasNextLine())
+	            	{
+	            		publish(s.nextLine() + "\n");
+	            	}
+	            return null;
+	        }
+	        @Override protected void process(List<String> chunks) {
+	            for (String line : chunks) area.append(line);
+	        }
+	    }.execute();
+	    
+	    area.addKeyListener(new KeyAdapter() {
+	        private StringBuffer line = new StringBuffer();
+	        @Override public void keyTyped(KeyEvent e) {
+	            char c = e.getKeyChar();
+
+	            if (c == KeyEvent.VK_ESCAPE) {
+	            	try
+	            	{
+	            		client.getClientOutput().sendEnvelope(new Envelope(client.getClientPlayer().toString() + " disconnected! ", "String"));
+	            		
+	            		client.getSpaceStats().getPlayer(client.getClientPlayer().toString()).setClient(null);
+	            		
+		            	client.getClientOutput().sendEnvelope(new Envelope(client.getSpaceStats(), "SpaceStats"));
+		            	
+		            	System.exit(0);
+	            	}
+	            	catch(Exception ex)
+	            	{
+	            		//client.getClientOutput().sendEnvelope(new Envelope("Failed to send updated Space Stats to Server after " + client.getClientPlayer().toString() + " disconnected! ", "String"));
+	            		System.exit(0);
+	            	}
+	            	
+	            	
+	            }
+	        }
+	    });
+	    
+	    area.setEditable(false);
+	    
 	    return area;
 	}
 }

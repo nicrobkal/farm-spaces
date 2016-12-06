@@ -1,18 +1,18 @@
-
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.PriorityQueue;
 
 public class Player implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private String playerName = "ADMIN_OVERRIDE";
-	private Skill[] skillList = new Skill[0];
+	private Skill[] skillList;
 	private Building currBuilding;
-	private transient Client client;
+	private Client client;
+	private PriorityQueue<Event> eventQueue = new PriorityQueue<Event>();
 	//private Occupation occupation
 	//private int communityRank
 
@@ -27,6 +27,8 @@ public class Player implements Serializable
 		this.playerID = playerID;
 		
 		this.client = client;
+		
+		this.skillList = client.getSpaceStats().spaceSkills;
 	}
 	
 	public String toString()
@@ -34,18 +36,9 @@ public class Player implements Serializable
 		return playerName;
 	}
 	
-	public void addSkill(Skill newSkill)
+	public void improveSkill(Skill improvedSkill, int addedXP)
 	{
-		Skill[] tempSkills = new Skill[skillList.length + 1];
-		
-		for(int i = 0; i < skillList.length; i++)
-		{
-			tempSkills[i] = skillList[i];
-		}
-		
-		tempSkills[tempSkills.length - 1] = newSkill;
-		
-		skillList = tempSkills;
+		//for(int i = 0; i < )
 	}
 	
 	public Client getClient()

@@ -23,7 +23,7 @@ public class SpaceStats implements Serializable
 		return spaceName;
 	}
 	
-	public void addSkill(Skill newSkill, Building startBuilding)
+	public void addSkill(Skill newSkill)
 	{
 		Skill[] tempSkills = new Skill[spaceSkills.length + 1];
 		
@@ -86,5 +86,30 @@ public class SpaceStats implements Serializable
 				break;
 			}
 		}
+	}
+	
+	public boolean clientOnline(String playerName)
+	{
+		for(int i = 0; i < playerList.length; i++)
+		{
+			try
+			{
+				//System.out.println(playerList[i].getClient());
+				if(playerList[i].getClient() != null)
+				{
+					//System.out.println("One not null. ");
+					if(playerList[i].toString().equals(playerName))
+					{
+						return true;
+					}
+				}
+			}
+			catch(Exception ex)
+			{
+				System.out.println("Client not associated with Player. ");
+			}
+		}
+		
+		return false;
 	}
 }

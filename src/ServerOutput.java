@@ -35,38 +35,43 @@ public class ServerOutput implements Runnable
 	
 	public void run() 
 	{	
-		try 
-		{
+		
 			while(true)
 			{
 				//Update Space (Seen by current client)
-				Envelope envelope = (Envelope)in.readObject();
-				if(envelope.getType().equals("String"))
+				
+				try 
 				{
-					String message = (String)envelope.getContents(String.class);
+					Envelope envelope = (Envelope)in.readObject();
+					if(envelope.getType().equals("String"))
+					{
+						String message = (String)envelope.getContents(String.class);
+						
+						server.printMessageToAll(message);
+					}
+					else if(envelope.getType().equals("SpaceStats"))
+					{
+						SpaceStats spaceStats = (SpaceStats)envelope.getContents(SpaceStats.class);
+						server.updateClientList();
+						server.updateStats(spaceStats);
+						server.saveProgress();
+					}
+				}
+				catch (Exception ex) 
+				{
+					//System.out.println("Server fried. ");
+					//ex.printStackTrace();
 					
-					server.printMessageToAll(message);
+					server.updateClientList();
+					//server.updateStats(spaceStats);
+					
+					
+					//System.exit(0);
+					//ex.printStackTrace();
 				}
-				else if(envelope.getType().equals("SpaceStats"))
-				{
-					SpaceStats spaceStats = (SpaceStats)envelope.getContents(SpaceStats.class);
-					server.updateStats(spaceStats);
-					server.saveProgress();
-				}
+				
 			}
-		}
-		catch (Exception ex) 
-		{
-			//System.out.println("Client disconnected. ");
-			
-			
-			server.updateClientList();
-			//server.updateStats(spaceStats);
-			
-			
-			//System.exit(0);
-			//ex.printStackTrace();
-		}
+		
 	}
 	
 	public void sendEnvelope(Envelope envelope)

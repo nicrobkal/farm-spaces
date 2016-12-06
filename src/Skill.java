@@ -9,18 +9,21 @@ public class Skill implements Serializable
 	private String skillName;
 	private String skillDesc;
 	
+	private Building associatedBuilding;
+	
 	public int level;
 	private int XP;
 	
-	public Skill(String skillName, String skillDesc)
+	public Skill(String skillName, String skillDesc, Building associatedBuilding)
 	{
-		new Skill(skillName, skillDesc, 0);
+		new Skill(skillName, skillDesc, associatedBuilding, 0);
 	}
 	
-	public Skill(String skillName, String skillDesc, int Level)
+	public Skill(String skillName, String skillDesc, Building associatedBuilding, int Level)
 	{
 		this.skillName = skillName;
 		this.skillDesc = skillDesc;
+		this.associatedBuilding = associatedBuilding;
 		this.level = level;
 	}
 	
