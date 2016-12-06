@@ -29,38 +29,55 @@ public class Client implements Serializable
 			
 			clientOutput = new ClientOutput(socket, this);
 			
-			System.out.println("What is the name of your new Farm Space character? ");
-			playerName = sc.nextLine();
 			
-			clientCommandListener = new ClientCommandListener(this); 
 			
-			try
+			
+			boolean playerEntered = false;
+			
+			while(!playerEntered)
 			{
-				if(spaceStats.getPlayer(playerName) != null)
+				System.out.println("What is the name of your Farm Space character? ");
+				playerName = sc.nextLine();
+				
+				try
 				{
-					localPlayer = spaceStats.getPlayer(playerName);
-					localPlayer.setClient(this);
-					String startMessage = localPlayer.toString() + " has re-joined!! ";
-					printMessageToAll(startMessage);
+					if(spaceStats.getPlayer(playerName) != null && !spaceStats.clientOnline(playerName))
+					{
+						clientCommandListener = new ClientCommandListener(this); 
+						localPlayer = spaceStats.getPlayer(playerName);
+						localPlayer.setClient(this);
+						
+						printMessageToAll("Player " + localPlayer.toString() + " has re-joined! ");
+						playerEntered = true;
+					}
+					else
+					{
+						if(spaceStats.clientOnline(playerName))
+						{
+							System.out.println("Player is already online! ");
+						}
+						else
+						{
+							throw new Exception();
+						}
+					}
+				}
+				catch(Exception ex)
+				{
+					clientCommandListener = new ClientCommandListener(this); 
+					localPlayer = new Player(playerName, spaceStats.startBuilding, spaceStats.playerList.length, this);
 					
-					clientOutput.sendEnvelope(new Envelope("Player " + localPlayer.toString() + " has re-joined! ", "String"));
-				}
-				else
-				{
-					throw new Exception();
+					localPlayer.setClient(this);
+					
+					spaceStats.addPlayer(localPlayer);
+					
+					String startMessage = localPlayer.toString() + " has joined the " + spaceStats.spaceName + " for the first time!! ";
+					clientOutput.sendEnvelope(new Envelope(startMessage, "String"));
+					
+					playerEntered = true;
 				}
 			}
-			catch(Exception ex)
-			{
-				localPlayer = new Player(playerName, spaceStats.startBuilding, spaceStats.playerList.length, this);
-				
-				localPlayer.setClient(this);
-				
-				spaceStats.addPlayer(localPlayer);
-				
-				String startMessage = localPlayer.toString() + " has joined the " + spaceStats.spaceName + " for the first time!! ";
-				clientOutput.sendEnvelope(new Envelope(startMessage, "String"));
-			}
+			
 			
 			clientOutput.sendEnvelope(new Envelope(spaceStats, "SpaceStats"));
 		}

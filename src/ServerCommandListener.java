@@ -10,7 +10,6 @@ public class ServerCommandListener implements Runnable, KeyListener
 	
 	public ServerCommandListener(Server server)
 	{
-		this.spaceStats = server.getSpaceStats();
 		this.server = server;
 		
 		sc = new Scanner(System.in);
@@ -34,7 +33,7 @@ public class ServerCommandListener implements Runnable, KeyListener
 				args += commandList[i] + " ";
 			}
 			
-			String firstCommand = commandList[0].toLowerCase();
+			String firstCommand = commandList[0];
 			
 			switch(firstCommand)
 			{
@@ -54,55 +53,27 @@ public class ServerCommandListener implements Runnable, KeyListener
 				break;
 				
 			case "print":
-				for(int i = 0; i < spaceStats.playerList.length; i++)
-				{
-					try
-					{
-						server.printMessageToAll(args);
-					}
-					catch(Exception ex)
-					{
-						System.out.println("Could not write server message ");
-					}
-				}
-				break;
-			
-			case "remove":
 				try
 				{
-					if(spaceStats.playerList.length < 1)
-					{
-						throw new Exception();
-					}
-					for(int i = 0; i < spaceStats.playerList.length; i++)
-					{
-						if(spaceStats.getPlayer(commandList[1]) != null)
-						{
-							spaceStats.removePlayer(commandList[1]);
-							
-							server.printMessageToAll("Player " + commandList[1] + " was deleted from the server. ");
-							
-							spaceStats.getPlayer(commandList[1]).getClient().printMessage("Your player " + commandList[1] + " was deleted. Please restart the client. ");
-							
-							System.out.println("Player" + commandList[1] + "removed. ");
-							
-							server.saveProgress();
-						}
-						else
-						{
-							throw new Exception();
-						}
-					}
+					server.printMessageToAll("SERVER: " + args);
 				}
 				catch(Exception ex)
 				{
-					System.out.println("Player \"" + commandList[1] + "\" not found. ");
-					ex.printStackTrace();
+					System.out.println("Could not write server message ");
 				}
 				break;
 				
 			case "save":
 				server.saveProgress();
+				break;
+				
+			case "help":
+				System.out.println("\nCommand List:");
+				
+				System.out.println("exit Saves the server and closes the game. ");
+				System.out.println("print (Message) Sends a message to the whole server. ");
+				System.out.println("save Saves the game. ");
+				System.out.println();
 				break;
 				
 			default:

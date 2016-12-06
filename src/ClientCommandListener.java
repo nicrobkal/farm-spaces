@@ -41,7 +41,17 @@ public class ClientCommandListener implements Runnable, KeyListener
 				break;
 				
 			case "/exit":
-				System.exit(0);
+				client.getClientOutput().sendEnvelope(new Envelope(client.getClientPlayer().toString() + " disconnected! ", "String"));
+        		
+            	client.getClientOutput().sendEnvelope(new Envelope(client.getSpaceStats(), "SpaceStats"));
+            	
+            	System.exit(0);
+				break;
+			case "/help":
+				System.out.println("\nCommand List:");
+				System.out.println("/t Sends a message. ");
+				System.out.println("/exit Leaves the game. ");
+				System.out.println();
 				break;
 			}
 		}

@@ -1,3 +1,7 @@
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.*;
@@ -6,8 +10,17 @@ import java.util.List;
 import java.util.Scanner;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.SwingWorker;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 public class Server
 {	
@@ -17,6 +30,20 @@ public class Server
 	static ServerOutput[] connectedClientsList = new ServerOutput[0];
 	
 	private static SpaceStats spaceStats;
+	
+	private static Building townHall = new Building("Town Hall", "The central hub of town where you can perform various official matters. ");
+	private static Building powerPlant = new Building("Power Plant", "The power plant of the town, where all the power is generated. ");
+	private static Building openFields = new Building("Open Fields", "The open fields of town, where crops are grown and animals are raised. ");
+	private static Building warehouse = new Building("Warehouse", "The storage warehouse in town, where all of the town's resources are kept. ");
+	private static Building mine = new Building("Mine", "The abundant mine in town, where people go to mine, and collect natural resources. ");
+	private static Building fort = new Building("Fort", "The ancient fort in town occupied by monsters, and a good place to collect loot. ");
+	
+	private static Skill farming = new Skill("Farming", "The ability to grow higher quality crops, and raise animals to make better products. ", openFields);
+	private static Skill thievery = new Skill("Thievery", "The ability to steal without being caught, and pick locks of higher calibre. ", warehouse);
+	private static Skill charisma = new Skill("Charisma", "The ability to convince others to see your point of view, and have them like you more. ", townHall);
+	private static Skill combat = new Skill("Combat", "The ability to defend yourself as well as deal damage in a fight. ", fort);
+	private static Skill mining = new Skill("Mining", "The ability to find better ore and gems and craft better ingots. ", mine);
+	private static Skill computing = new Skill("Computing", "The ability to hack terminals and take their information. ", powerPlant);
 	
 	public static void main(String[] args)
 	{
@@ -36,9 +63,24 @@ public class Server
 		    
 		    // 3. create the gui 
 		    JFrame frame = new JFrame("\"Spaces\" Server");
-		    frame.add(console(outPipe, inWriter));
-		    frame.setSize(600, 400);
-		    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		    frame.getContentPane().setLayout(new BorderLayout());
+		    frame.setPreferredSize(new Dimension(800, 600));
+		    
+		    JPanel inputPanel = new JPanel(new BorderLayout());
+		    
+	        inputPanel.setPreferredSize(new Dimension(800, 50));
+	        
+	        inputPanel.add(new JScrollPane(inputConsole(inWriter)));
+	        
+	        JPanel outputPanel = new JPanel(new BorderLayout());
+	        
+	        outputPanel.add(new JScrollPane(outputConsole(outPipe)));
+	        
+	        frame.getContentPane().add(inputPanel, BorderLayout.SOUTH);
+	        frame.getContentPane().add(outputPanel, BorderLayout.CENTER);
+	        
+	        frame.pack();
+	        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		    frame.setVisible(true);
 	    }
 	    catch(Exception ex)
@@ -57,6 +99,14 @@ public class Server
 		{
 			System.out.println("Starting new game. ");
 			spaceStats = new SpaceStats("Farm Space");
+			
+			spaceStats.addSkill(farming);
+			spaceStats.addSkill(thievery);
+			spaceStats.addSkill(charisma);
+			spaceStats.addSkill(combat);
+			spaceStats.addSkill(mining);
+			spaceStats.addSkill(computing);
+			
 			saveProgress();
 		}
 	    
@@ -65,8 +115,6 @@ public class Server
 			System.out.println("Starting Server.");
 			serverSocket=new ServerSocket(7777);
 			System.out.println("Server Started.");
-			
-			//System.out.println(InetAddress.getLocalHost().getHostAddress());
 		}
 		catch(Exception ex)
 		{
@@ -74,43 +122,6 @@ public class Server
 		}
 		
 		new Server(spaceStats, serverSocket);
-	}
-	
-	public static JTextArea console(final InputStream out, final PrintWriter in) {
-	    final JTextArea area = new JTextArea();
-
-	    // handle "System.out"
-	    new SwingWorker<Void, String>() {
-	        @Override protected Void doInBackground() throws Exception {
-	            Scanner s = new Scanner(out);
-	            while (s.hasNextLine()) publish(s.nextLine() + "\n");
-	            return null;
-	        }
-	        @Override protected void process(List<String> chunks) {
-	            for (String line : chunks) area.append(line);
-	        }
-	    }.execute();
-
-	    // handle "System.in"
-	    area.addKeyListener(new KeyAdapter() {
-	        private StringBuffer line = new StringBuffer();
-	        @Override public void keyTyped(KeyEvent e) {
-	            char c = e.getKeyChar();
-	            if (c == KeyEvent.VK_ENTER) {
-	                in.println(line);
-	                line.setLength(0); 
-	            } else if (c == KeyEvent.VK_BACK_SPACE) { 
-	                line.setLength(line.length() - 1); 
-	            } else if (!Character.isISOControl(c)) {
-	                line.append(e.getKeyChar());
-	            } else if (c == KeyEvent.VK_ESCAPE) {
-	                saveProgress();
-	                System.exit(0);
-	            }
-	        }
-	    });
-
-	    return area;
 	}
 
 	public Server(SpaceStats spaceStats, ServerSocket serverSocket) 
@@ -137,7 +148,7 @@ public class Server
 			}
 			catch(Exception ex)
 			{
-				System.out.println("Connection from: " + socket.getInetAddress() + " FAILED. ");
+				//System.out.println("Connection from: " + socket.getInetAddress() + " FAILED. ");
 			}
 		}
 	}
@@ -160,7 +171,7 @@ public class Server
 	         outS.writeObject(spaceStats);
 	         outS.close();
 	         fileOut.close();
-	         System.out.println("Game saved at " + currDir + "\\tmp\\SpaceStats.ser");
+	         System.out.println("Game saved. "); // at " + currDir + "\\tmp\\SpaceStats.ser");
 	         
 	         
 	      }catch(Exception ex) {
@@ -236,6 +247,7 @@ public class Server
 			catch(Exception ex)
 			{
 				removeClient(i);
+				//System.out.println("ERROR.");
 			}
 		}
 	}
@@ -284,5 +296,80 @@ public class Server
 				break;
 			}
 		}
+	}
+	
+	public static JTextPane inputConsole(final PrintWriter in) {
+		final JTextPane area = new JTextPane();
+
+		area.setFont(new Font("Times New Roman", Font.PLAIN, 28));
+		
+	    // handle "System.in"
+	    area.addKeyListener(new KeyAdapter() {
+	        private StringBuffer line = new StringBuffer();
+	        @Override public void keyTyped(KeyEvent e) {
+	            char c = e.getKeyChar();
+	            if (c == KeyEvent.VK_ENTER) {
+	                in.println(line);
+	                line.setLength(0); 
+	                area.setText("");
+	            } else if (c == KeyEvent.VK_BACK_SPACE) {
+	            	if(line.length() > 0)
+	            	{
+	            		line.setLength(line.length() - 1); 
+	            	}
+	            	else
+	            	{
+	            		line.append(' ');
+	            	}
+	            } else if (c == KeyEvent.VK_ESCAPE) {
+	            	saveProgress();
+	            	System.exit(0);
+	            	
+	            } else if (!Character.isISOControl(c)) {
+	                line.append(e.getKeyChar());
+	            }
+	        }
+	    });
+
+	    return area;
+	}
+	
+	public static JTextArea outputConsole(final InputStream out) {
+		final JTextArea area = new JTextArea();
+	    
+		area.setFont(new Font("Times New Roman", Font.PLAIN, 24));
+		
+		area.setBackground(new Color(200, 220, 255));
+		
+	    // handle "System.out"
+	    new SwingWorker<Void, String>() {
+	        @Override protected Void doInBackground() throws Exception {
+	            Scanner s = new Scanner(out);
+	            while (s.hasNextLine())
+	            	{
+	            		publish(s.nextLine() + "\n");
+	            	}
+	            return null;
+	        }
+	        @Override protected void process(List<String> chunks) {
+	            for (String line : chunks) area.append(line);
+	        }
+	    }.execute();
+	    
+	    area.addKeyListener(new KeyAdapter() {
+	        private StringBuffer line = new StringBuffer();
+	        @Override public void keyTyped(KeyEvent e) {
+	            char c = e.getKeyChar();
+
+	            if (c == KeyEvent.VK_ESCAPE) {
+	            	saveProgress();
+	            	System.exit(0);
+	            }
+	        }
+	    });
+	    
+	    area.setEditable(false);
+	    
+	    return area;
 	}
 }
